@@ -7,7 +7,8 @@ using RPG.Saving;
 
 namespace RPG.Combat
 {
-    public class Fighter : MonoBehaviour,IAction,ISaveable
+
+    public class Fighter : MonoBehaviour,IAction,ISaveable,IModifierProvider
     {
        
 
@@ -38,7 +39,10 @@ namespace RPG.Combat
                 AttackBehaviour();
             }
         }
-        
+        public Health GetTarget()
+        {
+            return target;
+        }
         public void EquipWeapon(Weapon weapon)
         {
             if (weapon == null) return;
@@ -76,11 +80,14 @@ namespace RPG.Combat
         }
         void Hit()
         {
+            float damageRate=1;
+            if (gameObject.tag=="Player")
+            damageRate = GetComponent<BaseStats>().GetStat(Stat.DamageRate);
             if (target == null) return;
             if (currentWeapon.HasProjectile())
-                currentWeapon.LaunchProjectile(rightHandTransform, leftHandTransform, target);
+                currentWeapon.LaunchProjectile(gameObject,rightHandTransform, leftHandTransform, target,damageRate);
             else
-                target.TakeDamage(currentWeapon.GetWeaponDamage());
+                target.TakeDamage(gameObject,currentWeapon.GetWeaponDamage(),damageRate);
         }
         void Shoot()
         {
@@ -97,6 +104,11 @@ namespace RPG.Combat
             string weaponName = (string)state;
             Weapon weapon = Resources.Load<Weapon>(weaponName);
             EquipWeapon(weapon);
+        }
+
+        public IEnumerable<float> GetProviders(Stat stat)
+        {
+            yield return 1;
         }
     }
 }

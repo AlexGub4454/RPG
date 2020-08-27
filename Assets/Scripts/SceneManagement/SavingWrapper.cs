@@ -9,7 +9,11 @@ namespace RPG.Saving
     public class SavingWrapper : MonoBehaviour
     {
         const string saveFileName = "save";
-        IEnumerator Start()
+        private void Awake()
+        {
+            StartCoroutine(LoadingLevel());
+        }
+        IEnumerator LoadingLevel()
         {
           //  StartCoroutine(GetComponent<SavingSystem>().LoadLastScene());
          //   Fader fader = FindObjectOfType<Fader>();

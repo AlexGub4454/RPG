@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using RPG.Combat;
 using RPG.Core;
+using UnityEngine.EventSystems;
 namespace RPG.Control
 {
     public class PlayerController : MonoBehaviour
@@ -10,19 +11,46 @@ namespace RPG.Control
         RaycastHit raycastHit;
         Ray ray;
         Health health;
-        private void Start()
+        [SerializeField]
+        CursorMapping[] cursorMappings;
+        [System.Serializable]
+        public struct CursorMapping
+        {
+            public CursorType cursorType;
+            public Texture2D texture;
+            public Vector2 hotspot;
+        }
+        public enum CursorType
+        {
+            None,
+            Movement,
+            Combat
+        }
+
+        private void Awake()
         {
             health = GetComponent<Health>();
         }
         private void Update()
         {
+            if (InteractWithUI()) return;
             if (health.IsDead()) return;
-            
+          
             if(InteractWithCombat()) return;
            if(InteractWithMovement()) return;
-           
-        }
 
+            SetCursor(CursorType.Movement);
+        }
+        bool InteractWithUI()
+        {
+            if (EventSystem.current.IsPointerOverGameObject())
+            {
+
+                return true;
+            }
+            return false;
+        }
+        
         bool InteractWithCombat()
         {
             RaycastHit[] hits = Physics.RaycastAll(GetRay());
@@ -40,6 +68,7 @@ namespace RPG.Control
                 {
                     GetComponent<Fighter>().Attack(target.gameObject);
                 }
+                SetCursor(CursorType.Combat);
                 return true;    
             }
             return false;
@@ -53,11 +82,27 @@ namespace RPG.Control
                 {
                     GetComponent<Movement.Mover>().StartMoveTo(raycastHit.point,1f);
                 }
+                SetCursor(CursorType.Movement);
                 return true;
             }
             return false;
         }
-       
+        private void SetCursor(CursorType type)
+        {
+            CursorMapping cursorMapping = GetCursorMapping(type);
+            Cursor.SetCursor(cursorMapping.texture,cursorMapping.hotspot,CursorMode.Auto);
+        }
+        private CursorMapping GetCursorMapping(CursorType cursorType)
+        {
+            foreach(CursorMapping cursorMapping in cursorMappings)
+            {
+                if (cursorMapping.cursorType == cursorType)
+                {
+                    return cursorMapping;
+                }
+            }
+            return cursorMappings[0];
+        }
         public static Ray GetRay()
         {
             return Camera.main.ScreenPointToRay(Input.mousePosition); 
